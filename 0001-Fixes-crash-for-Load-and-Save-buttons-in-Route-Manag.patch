@@ -1,0 +1,41 @@
+From d8c8cedf2ba1e5b4437ff384a5e3546d521883c1 Mon Sep 17 00:00:00 2001
+From: Israel Hernandez <israel.a.hernandez@gmail.com>
+Date: Sun, 18 Jul 2021 18:18:10 -0700
+Subject: [PATCH] Fixes crash for Load and Save buttons in Route Manager
+
+On Gnome, when Qt5  used, if in the route manager either Load or Save
+are used twice, the program hangs and fails to recover.
+
+This is a known issue within Gnome, and requires the setting of the
+Flag QFileDialog::DontUseNativeDialog to prevent the crashing.
+
+This patch allows setting this flag and returns to expected behavior:
+That is that Load or Save buttons can be repeatedly used in the route
+manager without experiencing a crash.
+---
+ src/GUI/QtFileDialog.cxx | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/src/GUI/QtFileDialog.cxx b/src/GUI/QtFileDialog.cxx
+index deb65a9a7..f0018923a 100644
+--- a/src/GUI/QtFileDialog.cxx
++++ b/src/GUI/QtFileDialog.cxx
+@@ -49,12 +49,14 @@ void QtFileDialog::exec()
+     QFileDialog dlg(0,QString::fromStdString(_title),QString::fromStdString(_initialPath.utf8Str()),QString::fromStdString(filter));
+     if (_usage==USE_SAVE_FILE) {
+         dlg.setAcceptMode(QFileDialog::AcceptSave);
++	dlg.setOptions(QFileDialog::DontUseNativeDialog);
+     }
+     if (_usage==USE_CHOOSE_DIR) {
+         dlg.setFileMode(QFileDialog::Directory);
+     }
+     if (_usage==USE_OPEN_FILE) {
+-        dlg.setFileMode(QFileDialog::ExistingFile);
++      dlg.setAcceptMode(QFileDialog::AcceptOpen);
++      dlg.setOptions(QFileDialog::DontUseNativeDialog);
+     }
+     dlg.setLabelText(QFileDialog::Accept,QString::fromStdString(_buttonText));
+     dlg.selectFile(QString::fromStdString(_placeholder));
+-- 
+2.26.2
+
